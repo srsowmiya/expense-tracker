@@ -51,8 +51,13 @@ public class MainGUI extends JFrame {
         setLocationRelativeTo(null); // center window on screen
         setVisible(true);
 
-        button1.addActionListener(e -> new CategoryGUI());
-        button2.addActionListener(e -> new ExpenseGUI());
+        button1.addActionListener(e -> 
+        new CategoryGUI()
+        );
+        
+        button2.addActionListener(e -> 
+        new ExpenseGUI()
+        );
     }
 
     public static void main(String[] args) {
