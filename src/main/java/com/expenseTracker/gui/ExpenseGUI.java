@@ -28,7 +28,7 @@ public class ExpenseGUI extends JFrame {
     private JButton addButton;
     private JTable expenseTable;
     private JButton deleteButton;
-
+    private JButton refreshButton;
     private CategoryDAO categoryDAO;
     private ExpenseDAO expenseDAO;
 
@@ -77,6 +77,10 @@ public class ExpenseGUI extends JFrame {
         deleteButton = new JButton("Delete EXpense");
         deleteButton.addActionListener(e -> deleteExpense());
         panel.add(deleteButton);
+
+        refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(e -> loadExpenses());
+        panel.add(refreshButton);
 
         // Add panel to top
         add(panel, BorderLayout.NORTH);
