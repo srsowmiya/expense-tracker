@@ -124,4 +124,8 @@ public class ExpenseDAO {
             }
         }
     }
+
+    public Expense getExpenseById(int id) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
