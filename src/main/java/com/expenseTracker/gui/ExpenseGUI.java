@@ -49,28 +49,30 @@ public class ExpenseGUI extends JFrame {
     private void initComponents() {
         JPanel panel = new JPanel(new GridLayout(6, 2, 5, 5));
 
-        // Category dropdown
+       
         panel.add(new JLabel("Category:"));
         categoryComboBox = new JComboBox<>();
         loadCategories();
         panel.add(categoryComboBox);
+        categoryComboBox.addActionListener(e -> filterExpenses());
 
-        // Description
+
+       
         panel.add(new JLabel("Description:"));
         descriptionField = new JTextField(15);
         panel.add(descriptionField);
 
-        // Amount
+     
         panel.add(new JLabel("Amount:"));
         amountField = new JTextField(10);
         panel.add(amountField);
 
-        // Date
+      
         panel.add(new JLabel("Date (YYYY-MM-DD):"));
         dateField = new JTextField(10);
         panel.add(dateField);
 
-        // Add button
+        
         addButton = new JButton("Add Expense");
         addButton.addActionListener(e -> addExpense());
         panel.add(addButton);
@@ -234,6 +236,35 @@ public class ExpenseGUI extends JFrame {
             JOptionPane.showMessageDialog(this, "Error deleting expense: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    private void filterExpenses() {
+    String selectedCategory = (String) categoryComboBox.getSelectedItem();
+    if (selectedCategory == null) return;
+    try {
+        int categoryId = categoryDAO.getCategoryIdByName(selectedCategory);
+        List<Expense> expenses = expenseDAO.getExpensesByCategory(categoryId);
+        String[] columnNames = {"ID", "Category", "Description", "Amount", "Date"};
+        Object[][] data = new Object[expenses.size()][5];
+
+        for (int i = 0; i < expenses.size(); i++) {
+            Expense exp = expenses.get(i);
+            data[i][0] = exp.getId();
+            data[i][1] = exp.getCategoryName();
+            data[i][2] = exp.getDescription();
+            data[i][3] = exp.getAmount();
+            data[i][4] = exp.getDate();
+        }
+
+        expenseTable.setModel(new javax.swing.table.DefaultTableModel(data, columnNames));
+        expenseTable.revalidate();
+        expenseTable.repaint();
+
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(this, "Error filtering expenses: " + ex.getMessage(),
+                                      "Database Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
 
     public static void main(String[] args) {
         new ExpenseGUI();

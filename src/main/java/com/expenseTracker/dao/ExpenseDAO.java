@@ -67,13 +67,40 @@ public class ExpenseDAO {
         }
     }
 
+    public List<Expense> getExpensesByCategory(int categoryId) throws SQLException {
+    List<Expense> expenses = new ArrayList<>();
+    String query = "SELECT e.expense_id, e.description, e.amount, e.date, e.id AS category_id, c.name AS category_name " +
+                   "FROM expenses e LEFT JOIN category c ON e.id = c.id WHERE e.id = ?";
+
+    try (Connection conn = DataBaseConnection.getDBConnection();
+         PreparedStatement stmt = conn.prepareStatement(query)) {
+
+        stmt.setInt(1, categoryId);
+        try (ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                Expense exp = new Expense();
+                exp.setId(rs.getInt("expense_id"));
+                exp.setCategoryId(rs.getInt("category_id"));
+                exp.setCategoryName(rs.getString("category_name"));
+                exp.setDescription(rs.getString("description"));
+                exp.setAmount(rs.getDouble("amount"));
+                exp.setDate(rs.getString("date"));
+                expenses.add(exp);
+            }
+        }
+    }
+
+    return expenses;
+}
+
+
     // Delete expense
     public int deleteExpense(int expenseId) throws SQLException {
         String query = "DELETE FROM expenses WHERE expense_id = ?";
 
         try (Connection conn = DataBaseConnection.getDBConnection();
             PreparedStatement stmt = conn.prepareStatement(query)) {
-                
+
             stmt.setInt(1, expenseId);
             return stmt.executeUpdate();
         }
