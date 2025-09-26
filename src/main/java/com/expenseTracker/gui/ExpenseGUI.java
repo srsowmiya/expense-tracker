@@ -1,19 +1,10 @@
 package com.expenseTracker.gui;
 
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
-import java.sql.Date;
+import java.awt.*;
 import java.util.List;
-
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 
 import com.expenseTracker.dao.CategoryDAO;
 import com.expenseTracker.dao.ExpenseDAO;
@@ -26,10 +17,8 @@ public class ExpenseGUI extends JFrame {
     private JTextField descriptionField;
     private JTextField amountField;
     private JTextField dateField;
-    private JButton addButton;
+    private JButton addButton, deleteButton, refreshButton, updateButton;
     private JTable expenseTable;
-    private JButton deleteButton;
-    private JButton refreshButton;
     private CategoryDAO categoryDAO;
     private ExpenseDAO expenseDAO;
 
@@ -38,7 +27,7 @@ public class ExpenseGUI extends JFrame {
         expenseDAO = new ExpenseDAO();
 
         setTitle("Expense Tracker");
-        setSize(700, 400);
+        setSize(750, 450);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -47,54 +36,57 @@ public class ExpenseGUI extends JFrame {
     }
 
     private void initComponents() {
-        JPanel panel = new JPanel(new GridLayout(6, 2, 5, 5));
+        // -------- TOP PANEL (Inputs + Buttons) --------
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BorderLayout(10, 10));
+        topPanel.setBorder(new EmptyBorder(10, 10, 10, 10)); // padding
 
-       
-        panel.add(new JLabel("Category:"));
+        // ---- Input Fields ----
+        JPanel inputPanel = new JPanel(new GridLayout(2, 4, 10, 10)); // 2 rows, 4 columns
+        inputPanel.add(new JLabel("Category:"));
         categoryComboBox = new JComboBox<>();
         loadCategories();
-        panel.add(categoryComboBox);
         categoryComboBox.addActionListener(e -> filterExpenses());
+        inputPanel.add(categoryComboBox);
 
+        inputPanel.add(new JLabel("Description:"));
+        descriptionField = new JTextField(10);
+        inputPanel.add(descriptionField);
 
-       
-        panel.add(new JLabel("Description:"));
-        descriptionField = new JTextField(15);
-        panel.add(descriptionField);
-
-     
-        panel.add(new JLabel("Amount:"));
+        inputPanel.add(new JLabel("Amount:"));
         amountField = new JTextField(10);
-        panel.add(amountField);
+        inputPanel.add(amountField);
 
-      
-        panel.add(new JLabel("Date (YYYY-MM-DD):"));
+        inputPanel.add(new JLabel("Date (YYYY-MM-DD):"));
         dateField = new JTextField(10);
-        panel.add(dateField);
+        inputPanel.add(dateField);
 
-        
+        topPanel.add(inputPanel, BorderLayout.NORTH);
+
+        // ---- Buttons ----
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
         addButton = new JButton("Add Expense");
         addButton.addActionListener(e -> addExpense());
-        panel.add(addButton);
-
-        deleteButton = new JButton("Delete EXpense");
+        deleteButton = new JButton("Delete Expense");
         deleteButton.addActionListener(e -> deleteExpense());
-        panel.add(deleteButton);
-
         refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(e -> loadExpenses());
-        panel.add(refreshButton);
-
-        JButton updateButton = new JButton("Update");
+        updateButton = new JButton("Update");
         updateButton.addActionListener(e -> updateExpense());
-        panel.add(updateButton);
 
-        // Add panel to top
-        add(panel, BorderLayout.NORTH);
+        buttonPanel.add(addButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(updateButton);
 
-        // Expense table
+        topPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        add(topPanel, BorderLayout.NORTH);
+
+        // -------- TABLE --------
         expenseTable = new JTable();
         JScrollPane scrollPane = new JScrollPane(expenseTable);
+        scrollPane.setBorder(new EmptyBorder(10, 10, 10, 10)); // padding around table
         add(scrollPane, BorderLayout.CENTER);
 
         // Load existing expenses
@@ -124,16 +116,14 @@ public class ExpenseGUI extends JFrame {
         }
 
         double amount;
-        try {
-            amount = Double.parseDouble(amountText);
-        } catch (NumberFormatException e) {
+        try { amount = Double.parseDouble(amountText); } 
+        catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Invalid amount format.", "Input Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
             int categoryId = categoryDAO.getCategoryIdByName(categoryName);
-
             Expense expense = new Expense();
             expense.setCategoryId(categoryId);
             expense.setDescription(description);
@@ -147,53 +137,37 @@ public class ExpenseGUI extends JFrame {
             dateField.setText("");
 
             loadExpenses();
-
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error adding expense: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-   private void updateExpense() {
-    int selectedRow = expenseTable.getSelectedRow();
-    if (selectedRow == -1) {
-        JOptionPane.showMessageDialog(this,
-                "Please select an expense to update.",
-                "Selection Error",
-                JOptionPane.WARNING_MESSAGE);
-        return;
-    }
+    private void updateExpense() {
+        int selectedRow = expenseTable.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an expense to update.", "Selection Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-    int expenseId = (int) expenseTable.getValueAt(selectedRow, 0);
-    String currentCategoryName = (String) expenseTable.getValueAt(selectedRow, 1);
-    String currentDescription = (String) expenseTable.getValueAt(selectedRow, 2);
-    double currentAmount = (double) expenseTable.getValueAt(selectedRow, 3);
-    String currentDateStr = (String) expenseTable.getValueAt(selectedRow, 4);
+        int expenseId = (int) expenseTable.getValueAt(selectedRow, 0);
+        String currentCategoryName = (String) expenseTable.getValueAt(selectedRow, 1);
+        String currentDescription = (String) expenseTable.getValueAt(selectedRow, 2);
+        double currentAmount = (double) expenseTable.getValueAt(selectedRow, 3);
+        String currentDateStr = (String) expenseTable.getValueAt(selectedRow, 4);
 
-    // Ask user for new description
-    String newDescription = JOptionPane.showInputDialog(this,
-            "Update description:", currentDescription);
-
-    if (newDescription != null && !newDescription.trim().isEmpty()) {
-        try {
-            int categoryId = categoryDAO.getCategoryIdByName(currentCategoryName);
-            java.sql.Date sqlDate = java.sql.Date.valueOf(currentDateStr);
-
-            expenseDAO.updateExpense(expenseId, currentAmount, newDescription.trim(), sqlDate, categoryId);
-
-            JOptionPane.showMessageDialog(this,
-                    "Expense updated successfully.",
-                    "Success",
-                    JOptionPane.INFORMATION_MESSAGE);
-            loadExpenses();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    "Error updating expense: " + e.getMessage(),
-                    "Database Error",
-                    JOptionPane.ERROR_MESSAGE);
+        String newDescription = JOptionPane.showInputDialog(this, "Update description:", currentDescription);
+        if (newDescription != null && !newDescription.trim().isEmpty()) {
+            try {
+                int categoryId = categoryDAO.getCategoryIdByName(currentCategoryName);
+                java.sql.Date sqlDate = java.sql.Date.valueOf(currentDateStr);
+                expenseDAO.updateExpense(expenseId, currentAmount, newDescription.trim(), sqlDate, categoryId);
+                JOptionPane.showMessageDialog(this, "Expense updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                loadExpenses();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Error updating expense: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
-}
-
 
     private void loadExpenses() {
         try {
@@ -210,11 +184,9 @@ public class ExpenseGUI extends JFrame {
                 data[i][4] = exp.getDate();
             }
 
-            expenseTable.setModel(new javax.swing.table.DefaultTableModel(data, columnNames));
+            expenseTable.setModel(new DefaultTableModel(data, columnNames));
             expenseTable.revalidate();
             expenseTable.repaint();
-
-
         } catch (Exception e) {
             System.err.println("Error loading expenses: " + e.getMessage());
         }
@@ -238,33 +210,30 @@ public class ExpenseGUI extends JFrame {
     }
 
     private void filterExpenses() {
-    String selectedCategory = (String) categoryComboBox.getSelectedItem();
-    if (selectedCategory == null) return;
-    try {
-        int categoryId = categoryDAO.getCategoryIdByName(selectedCategory);
-        List<Expense> expenses = expenseDAO.getExpensesByCategory(categoryId);
-        String[] columnNames = {"ID", "Category", "Description", "Amount", "Date"};
-        Object[][] data = new Object[expenses.size()][5];
+        String selectedCategory = (String) categoryComboBox.getSelectedItem();
+        if (selectedCategory == null) return;
+        try {
+            int categoryId = categoryDAO.getCategoryIdByName(selectedCategory);
+            List<Expense> expenses = expenseDAO.getExpensesByCategory(categoryId);
+            String[] columnNames = {"ID", "Category", "Description", "Amount", "Date"};
+            Object[][] data = new Object[expenses.size()][5];
 
-        for (int i = 0; i < expenses.size(); i++) {
-            Expense exp = expenses.get(i);
-            data[i][0] = exp.getId();
-            data[i][1] = exp.getCategoryName();
-            data[i][2] = exp.getDescription();
-            data[i][3] = exp.getAmount();
-            data[i][4] = exp.getDate();
+            for (int i = 0; i < expenses.size(); i++) {
+                Expense exp = expenses.get(i);
+                data[i][0] = exp.getId();
+                data[i][1] = exp.getCategoryName();
+                data[i][2] = exp.getDescription();
+                data[i][3] = exp.getAmount();
+                data[i][4] = exp.getDate();
+            }
+
+            expenseTable.setModel(new DefaultTableModel(data, columnNames));
+            expenseTable.revalidate();
+            expenseTable.repaint();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error filtering expenses: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
-
-        expenseTable.setModel(new javax.swing.table.DefaultTableModel(data, columnNames));
-        expenseTable.revalidate();
-        expenseTable.repaint();
-
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Error filtering expenses: " + ex.getMessage(),
-                                      "Database Error", JOptionPane.ERROR_MESSAGE);
     }
-}
-
 
     public static void main(String[] args) {
         new ExpenseGUI();
