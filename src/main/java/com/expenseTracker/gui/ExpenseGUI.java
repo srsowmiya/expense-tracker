@@ -2,6 +2,7 @@ package com.expenseTracker.gui;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.sql.Date;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -82,6 +83,10 @@ public class ExpenseGUI extends JFrame {
         refreshButton.addActionListener(e -> loadExpenses());
         panel.add(refreshButton);
 
+        JButton updateButton = new JButton("Update");
+        updateButton.addActionListener(e -> updateExpense());
+        panel.add(updateButton);
+
         // Add panel to top
         add(panel, BorderLayout.NORTH);
 
@@ -146,6 +151,48 @@ public class ExpenseGUI extends JFrame {
         }
     }
 
+   private void updateExpense() {
+    int selectedRow = expenseTable.getSelectedRow();
+    if (selectedRow == -1) {
+        JOptionPane.showMessageDialog(this,
+                "Please select an expense to update.",
+                "Selection Error",
+                JOptionPane.WARNING_MESSAGE);
+        return;
+    }
+
+    int expenseId = (int) expenseTable.getValueAt(selectedRow, 0);
+    String currentCategoryName = (String) expenseTable.getValueAt(selectedRow, 1);
+    String currentDescription = (String) expenseTable.getValueAt(selectedRow, 2);
+    double currentAmount = (double) expenseTable.getValueAt(selectedRow, 3);
+    String currentDateStr = (String) expenseTable.getValueAt(selectedRow, 4);
+
+    // Ask user for new description
+    String newDescription = JOptionPane.showInputDialog(this,
+            "Update description:", currentDescription);
+
+    if (newDescription != null && !newDescription.trim().isEmpty()) {
+        try {
+            int categoryId = categoryDAO.getCategoryIdByName(currentCategoryName);
+            java.sql.Date sqlDate = java.sql.Date.valueOf(currentDateStr);
+
+            expenseDAO.updateExpense(expenseId, currentAmount, newDescription.trim(), sqlDate, categoryId);
+
+            JOptionPane.showMessageDialog(this,
+                    "Expense updated successfully.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+            loadExpenses();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error updating expense: " + e.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}
+
+
     private void loadExpenses() {
         try {
             List<Expense> expenses = expenseDAO.getAllExpenses();
@@ -162,6 +209,9 @@ public class ExpenseGUI extends JFrame {
             }
 
             expenseTable.setModel(new javax.swing.table.DefaultTableModel(data, columnNames));
+            expenseTable.revalidate();
+            expenseTable.repaint();
+
 
         } catch (Exception e) {
             System.err.println("Error loading expenses: " + e.getMessage());

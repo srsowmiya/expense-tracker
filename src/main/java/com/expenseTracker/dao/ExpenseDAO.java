@@ -1,6 +1,7 @@
 package com.expenseTracker.dao;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -66,15 +67,34 @@ public class ExpenseDAO {
         }
     }
 
+    // Delete expense
     public int deleteExpense(int expenseId) throws SQLException {
         String query = "DELETE FROM expenses WHERE expense_id = ?";
 
         try (Connection conn = DataBaseConnection.getDBConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-
+            PreparedStatement stmt = conn.prepareStatement(query)) {
+                
             stmt.setInt(1, expenseId);
             return stmt.executeUpdate();
         }
-       
+    }
+
+  
+    public void updateExpense(int expenseId, double amount, String description, Date date, int categoryId) throws SQLException {
+        String query = "UPDATE expenses SET amount = ?, description = ?, date = ?, id = ? WHERE expense_id = ?";
+        try (Connection connection = DataBaseConnection.getDBConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            
+            preparedStatement.setDouble(1, amount);
+            preparedStatement.setString(2, description);
+            preparedStatement.setDate(3, date); 
+            preparedStatement.setInt(4, categoryId);
+            preparedStatement.setInt(5, expenseId);
+
+            int rowsUpdated = preparedStatement.executeUpdate();
+            if (rowsUpdated == 0) {
+                throw new SQLException("Updating expense failed, no rows affected.");
+            }
+        }
     }
 }
